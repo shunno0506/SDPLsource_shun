@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>日報作成</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <h1>日報作成</h1>
+  <p class="hint">必須項目は従業員ID・作業分類・事象分類・日付。写真は任意。</p>
+
+    <form id="reportForm">
+      <div class="row">
+        <div class="col">
+          <label for="employeeId" class="required">従業員ID</label>
+          <input type="text" id="employeeId" name="employeeId" placeholder="例: EMP-001" required />
+          <div class="field-note">シフトや担当確認に使います（必須）。</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="date" class="required">日付</label>
+          <input type="date" id="date" name="date" required />
+          <div class="field-note">日付は記録された日で固定されます（編集不可）。</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="role" class="required">作業分類</label>
+          <select id="role" name="role" required>
+            <option value="">-- 分類を選択 --</option>
+            <option>厨房</option>
+            <option>ホール</option>
+            <option>レジ</option>
+            <option>店外</option>
+            <option>設備</option>
+            <option>その他</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="eventType" class="required">事象分類</label><br>
+          <select id="eventType" name="eventType" required>
+            <option value="">-- 事象を選択 --</option>
+            <option>事故</option>
+            <option>故障</option>
+            <option>クレーム</option>
+            <option>賛辞</option>
+            <option>その他</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col full-width">
+          <label for="notes">メモ（状況・対処・備考）</label>
+          <textarea id="notes" name="notes" placeholder="例: クレーム内容、対処、担当者の対応などを記録"></textarea>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col full-width">
+          <label for="photos">写真（任意） ※1枚まで</label>
+          <input type="file" id="photos" name="photos" accept="image/*" />
+          <div class="photo-preview" id="photoPreview"></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn" id="saveBtn">登録する</button>
+        <button type="button" class="btn secondary" id="clearPhotoBtn">写真をクリア</button>
+        <button type="reset" class="btn secondary">リセット</button>
+        <a href="dailyHome.html" class="btn secondary" style="text-decoration:none">キャンセル</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // ページ読み込み時に日付を今日にセット（readonly のまま）
+    // ページを開いた時のアクセス日を保存しておき、リセット時はこの値に戻す
+    let initialDate = null;
+    (function setToday(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      const today = `${y}-${m}-${dd}`;
+      initialDate = today;
+      const dateEl = document.getElementById('date');
+      if(dateEl){
+        dateEl.value = initialDate;
+        // native reset should revert to defaultValue, so set it as well
+        dateEl.defaultValue = initialDate;
+      }
+    })();
+    // 写真プレビュー（最大1枚まで）
+    const photosInput = document.getElementById('photos');
+    const preview = document.getElementById('photoPreview');
+    photosInput.addEventListener('change', function(){
+      preview.innerHTML = '';
+      const files = this.files;
+      if(!files || files.length === 0) return;
+      // 複数選択された場合は最初の1枚だけ利用する
+      if(files.length > 1){
+        alert('写真は1枚までです。最初の1枚のみ使用します。');
+      }
+      const file = files[0];
+      if(!file) return;
+      const img = document.createElement('img');
+      img.alt = file.name;
+      const reader = new FileReader();
+      reader.onload = e => img.src = e.target.result;
+      reader.readAsDataURL(file);
+      preview.appendChild(img);
+    });
+
+    // フォームがリセットされたときに写真プレビューと file input をクリアする
+    const formEl = document.getElementById('reportForm');
+    formEl.addEventListener('reset', function(){
+      // プレビューを空にする
+      preview.innerHTML = '';
+      // file input の選択を解除（value を空にする）
+      try{ photosInput.value = ''; }catch(e){ /* ignore */ }
+      // 警告表示要素があれば非表示にする
+      const warning = document.getElementById('photoWarning');
+      if(warning) warning.style.display = 'none';
+  // 日付はページを開いた時のアクセス日に戻す
+  const dateEl = document.getElementById('date');
+  if(dateEl){ dateEl.value = initialDate || '' ; }
+    });
+
+    // 写真だけをクリアするボタン
+    const clearPhotoBtn = document.getElementById('clearPhotoBtn');
+    if(clearPhotoBtn){
+      clearPhotoBtn.addEventListener('click', function(){
+        preview.innerHTML = '';
+        try{ photosInput.value = ''; }catch(e){ /* ignore */ }
+        const warning = document.getElementById('photoWarning');
+        if(warning) warning.style.display = 'none';
+        // フォーカスをファイル入力に戻す
+        photosInput.focus();
+      });
+    }
+
+    // フォーム保存（簡易バリデーション＋JSON ダウンロード）
+    document.getElementById('saveBtn').addEventListener('click', function(){
+      const form = document.getElementById('reportForm');
+      // 従業員ID は必須チェック
+      const emp = document.getElementById('employeeId').value.trim();
+      if(!emp){
+        alert('従業員IDを入力してください。');
+        document.getElementById('employeeId').focus();
+        return;
+      }
+      if(!form.checkValidity()){
+        alert('必須項目を確認してください。');
+        return;
+      }
+      const data = {
+        date: document.getElementById('date').value,
+        employeeId: document.getElementById('employeeId').value,
+        role: document.getElementById('role').value,
+        eventType: document.getElementById('eventType').value,
+        customerCount: null,
+        notes: document.getElementById('notes').value,
+        photos: []
+      };
+
+      // 画像は base64 を付与（プロトタイプのみ、サイズ注意）
+      const files = document.getElementById('photos').files;
+      if(!files || files.length === 0){
+        downloadJSON(data);
+        return;
+      }
+      // 1枚のみ処理する
+      const file = files[0];
+      if(!file){ downloadJSON(data); return; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        data.photos.push({name:file.name, dataUrl:e.target.result});
+        downloadJSON(data);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function downloadJSON(obj){
+      const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dt = new Date();
+      a.download = 'report_'+dt.toISOString().slice(0,19).replace(/[:T]/g,'-')+'.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      alert('日報 JSON をダウンロードしました（プロトタイプ保存）。');
+    }
+  </script>
+</body>
+</html>

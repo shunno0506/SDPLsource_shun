@@ -1,0 +1,90 @@
+/* 共通スタイルシート
+   使用対象: home.html, dailyHome.html, sales.html, makeReport.html
+*/
+:root{
+  --accent: #0066cc;
+  --bg: #f4f7fb;
+  --card: #fff;
+  --muted: #666;
+}
+
+/* ベース */
+body{
+  font-family: Meiryo, 'Yu Gothic', 'Hiragino Kaku Gothic ProN', sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: #222;
+}
+
+/* コンテナ */
+.container, .wrap{
+  max-width: 900px;
+  margin: 36px auto;
+  padding: 20px;
+}
+
+/* 見出し / リード */
+header h1, h1{ margin: 0 0 8px; font-size: 1.6rem; }
+.lead, .desc, .muted{ color: var(--muted); margin-bottom: 18px; }
+
+/* カード/パネル */
+.cards{ display:flex; gap:18px; flex-wrap:wrap; }
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px; }
+.card, .panel, form{
+  background: var(--card);
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+}
+.card h2, .panel h2{ margin:0 0 8px; font-size:1.1rem }
+.card p, .panel p{ flex:1; color:var(--muted); margin:0 0 12px }
+
+/* ボタン */
+.btn, .action{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding: 12px 16px; border-radius:10px; background:var(--accent); color:#fff;
+  text-decoration:none; font-weight:600; box-shadow:0 4px 10px rgba(0,0,0,0.08); border:none;
+}
+.secondary{ background:#444 }
+.big{ font-size:1.05rem; padding:18px }
+.note{ font-size:0.9rem; color:#444; margin-top:18px; background:#fff; padding:12px; border-radius:8px }
+.footer{ margin-top:20px; font-size:0.9rem; color:var(--muted) }
+.back{ margin-top:18px; display:inline-block; color:var(--accent); text-decoration:none }
+
+/* フォーム共通 */
+.row{ display:flex; gap:12px; margin-bottom:12px }
+.col{ flex:1; display:flex; flex-direction:column }
+label{ font-weight:700; margin-bottom:6px }
+label.required::after{ content: " *"; color:#d9534f; font-weight:700; margin-left:4px }
+input[type=text], select, textarea, input[type=number], input[type=date]{
+  padding:10px; border:1px solid #d7dce6; border-radius:8px;
+}
+input:invalid, select:invalid{ outline:2px solid rgba(217,83,79,0.12) }
+textarea{ min-height:120px; resize:vertical; width:100%; box-sizing:border-box }
+.actions{ display:flex; gap:10px; align-items:center; margin-top:14px }
+
+/* 写真プレビュー等 */
+.photo-preview{ margin-top:8px; display:flex; gap:8px; flex-wrap:wrap }
+.photo-preview img{ width:120px; height:80px; object-fit:cover; border-radius:8px; border:1px solid #e6eef8 }
+
+/* メッセージ */
+.msg{ margin-top:12px; padding:10px; border-radius:8px }
+.msg.success{ background:#e6ffed; color:#115b2b }
+.msg.error{ background:#ffecec; color:#6b1a1a }
+
+/* 数値入力の見た目 */
+input[type=number]{ width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; margin-top:6px; font-size:1rem }
+
+/* 補助小物 */
+.field-note{ font-size:0.85rem; color:#666; margin-top:6px }
+.summary{ background:#f3fbff; border:1px solid #e1f0ff; padding:10px; border-radius:8px; margin-bottom:12px; color:#064d7b }
+
+@media(max-width:720px){
+  .container, .wrap{ margin:18px; padding:14px }
+  .cards{ flex-direction:column }
+  .grid{ grid-template-columns:1fr }
+  .row{ flex-direction:column }
+}

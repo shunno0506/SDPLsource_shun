@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ja">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>売上登録</title>
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+	<div class="wrap">
+		<header>
+			<h1>売上登録</h1>
+		</header>
+
+		<main class="card" role="main">
+			<form id="sales-form">
+				<label for="amount">売上金額（円）</label>
+				<input id="amount" name="amount" type="number" min="0" step="0.01" placeholder="例：12345.00" required>
+
+				<label for="customers">客数（人）</label>
+				<input id="customers" name="customers" type="number" min="0" step="1" placeholder="例：45" required>
+
+				<div style="margin-top:16px;display:flex;gap:12px;align-items:center">
+					<button type="submit" class="btn" id="register-btn">登録</button>
+					<a href="dailyHome.html" style="color:#0066cc;text-decoration:none">← メニューに戻る</a>
+				</div>
+
+				<div id="message" aria-live="polite"></div>
+			</form>
+		</main>
+	</div>
+
+	<script>
+		const form = document.getElementById('sales-form');
+		const msg = document.getElementById('message');
+
+		form.addEventListener('submit', function(e){
+			e.preventDefault();
+			msg.innerHTML = '';
+
+			const amountEl = document.getElementById('amount');
+			const customersEl = document.getElementById('customers');
+			const amount = parseFloat(amountEl.value);
+			const customers = parseInt(customersEl.value, 10);
+
+			// 簡単なバリデーション
+			if (isNaN(amount) || amount < 0) {
+				msg.className = 'msg error';
+				msg.textContent = '売上金額を正しく入力してください。';
+				amountEl.focus();
+				return;
+			}
+			if (isNaN(customers) || customers < 0) {
+				msg.className = 'msg error';
+				msg.textContent = '客数を正しく入力してください。';
+				customersEl.focus();
+				return;
+			}
+
+			// 通常はここでサーバーにPOSTする。今回は画面内で確認表示のみ行う。
+			msg.className = 'msg success';
+			msg.textContent = `登録しました： 売上 ¥${amount.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}、客数 ${customers} 人`;
+
+			// フォームをリセットして再入力可能にする
+			form.reset();
+			amountEl.focus();
+		});
+	</script>
+</body>
+</html>

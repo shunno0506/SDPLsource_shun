@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>日報エントリープロトタイプ_ver1.0</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>日報エントリー — プロトタイプ</h1>
+      <div class="lead">現場スタッフがその場で記録できる日報登録と、店舗改善を支援する分析・評価へ進むためのホーム画面</div>
+    </header>
+
+    <section class="cards" aria-label="主要な操作">
+      <article class="card" aria-labelledby="entry-title">
+        <h2 id="entry-title">日報登録</h2>
+        <p>アルバイトを含む現場スタッフが、発生時にその場で記録できるシンプルな入力画面に移動します。店舗選択、作業分類、売上・客数、事象分類、メモ、写真添付を想定。</p>
+        <a href="dailyHome.html" class="btn big" id="entry-btn" role="button" aria-pressed="false">日報を登録する</a>
+      </article>
+
+      <article class="card" aria-labelledby="analysis-title">
+        <h2 id="analysis-title">分析・評価</h2>
+        <p>店舗ごとの集計や時系列分析で改善点（課題）とGood Point（GP）を可視化し、PDCA を回すための評価画面に移動します。AI 提案のプレースホルダも用意。</p>
+        <a href="#" class="btn secondary big" id="analysis-btn" role="button" aria-pressed="false">分析・評価を見る</a>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    // 簡易プロトタイプ動作: ボタン押下でモーダル風の簡易説明を表示
+    function showMessage(title, text){
+      var el=document.createElement('div');
+      el.style.position='fixed';el.style.left=0;el.style.top=0;el.style.right=0;el.style.bottom=0;el.style.display='flex';el.style.alignItems='center';el.style.justifyContent='center';el.style.background='rgba(0,0,0,0.4)';
+      var box=document.createElement('div');box.style.background='#fff';box.style.padding='20px';box.style.borderRadius='10px';box.style.maxWidth='560px';box.style.boxShadow='0 8px 24px rgba(0,0,0,0.2)';
+      box.innerHTML='<h3>'+title+'</h3><p style="color:#444">'+text+'</p><div style="text-align:right;margin-top:12px"><button id="closeBtn" style="padding:8px 12px;border-radius:6px;background:#0078d4;color:#fff;border:none">閉じる</button></div>';
+      el.appendChild(box);document.body.appendChild(el);
+      document.getElementById('closeBtn').addEventListener('click',function(){document.body.removeChild(el)});
+    }
+    document.getElementById('entry-btn').addEventListener('click',function(e){
+      // 実運用／プロトタイプではボタン押下で dailyHome.html に遷移する
+      // anchor に href が設定されているため、明示的に遷移させる
+      window.location.href = 'dailyHome.html';
+    });
+    document.getElementById('analysis-btn').addEventListener('click',function(e){e.preventDefault();showMessage('分析・評価のプロトタイプ','ここから分析ダッシュボードへ遷移します（デモ）。\n例: 週間集計、クレーム種別別の発生数、改善提案のサマリを表示。');});
+  </script>
+</body>
+</html>
