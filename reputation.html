@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>分析ダッシュボード</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .dashboard{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    .panel{padding:14px}
+    .stat{display:flex;gap:12px;align-items:center}
+    .stat .num{font-size:1.6rem;font-weight:700}
+    .chart{background:#fff;padding:12px;border-radius:8px}
+  </style>
+  	<script src="js/auth.js" defer></script>
+</head>
+<body>
+  	<script>if(window.simpleAuth) window.simpleAuth.requireAuth();</script>
+  <a href="home.html" class="global-back">← ホーム</a>
+  <div class="container">
+    <header>
+      <h1>分析ダッシュボード</h1>
+      <div class="lead">ダッシュボード（デモ）: 週間集計・クレーム種別・売上推移 を表示します</div>
+    </header>
+
+    <main class="dashboard">
+      <section class="card panel">
+        <h2>週間売上推移</h2>
+        <div class="chart" id="salesChart" style="height:220px"></div>
+
+        <h2 style="margin-top:18px">クレーム種別</h2>
+        <div id="claimList" class="chart"></div>
+      </section>
+
+      <aside class="card panel">
+        <h3>主要指標</h3>
+        <div class="stat"><div class="num" id="totalSales">¥0</div><div>今週合計売上</div></div>
+        <div class="stat"><div class="num" id="avgCustomers">0</div><div>1日平均客数</div></div>
+          </aside>
+    </main>
+  </div>
+
+  <script>
+    // ダミーデータ（実際は API から取得する）
+    const sales = [12000, 15000, 13000, 17000, 16000, 18000, 14000];
+    const labels = ['月','火','水','木','金','土','日'];
+    const claims = [{type:'クレーム',n:5},{type:'故障',n:2},{type:'事故',n:1}];
+
+    // 棒グラフ描画 - シンプルな div ベース
+    (function drawSales(){
+      const container = document.getElementById('salesChart');
+      const max = Math.max(...sales);
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      const barWrap = document.createElement('div');
+      barWrap.style.display='flex';barWrap.style.alignItems='end';barWrap.style.height='100%';barWrap.style.gap='6px';
+      sales.forEach((v,i)=>{
+        const bar = document.createElement('div');
+        const ph = Math.round(v/max*100);
+        bar.style.height = ph+'%';
+        bar.style.width = Math.floor((w - (labels.length-1)*6)/labels.length)+'px';
+        bar.style.background = 'linear-gradient(180deg,#0078d4,#005a9e)';
+        bar.title = labels[i] + ' ' + v;
+        bar.style.borderRadius='6px 6px 0 0';
+        barWrap.appendChild(bar);
+      });
+      container.appendChild(barWrap);
+    })();
+
+    (function drawClaims(){
+      const el = document.getElementById('claimList');
+      claims.forEach(c=>{
+        const row = document.createElement('div');
+        row.style.display='flex';row.style.justifyContent='space-between';row.style.padding='6px 0';
+        row.innerHTML = `<div>${c.type}</div><div>${c.n} 件</div>`;
+        el.appendChild(row);
+      });
+    })();
+
+    // 指標
+    document.getElementById('totalSales').textContent = '¥' + sales.reduce((a,b)=>a+b,0).toLocaleString();
+    document.getElementById('avgCustomers').textContent = Math.round( ( (120+130+110+140+150+170+125)/7) );
+  </script>
+</body>
+</html>

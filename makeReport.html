@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>日報作成</title>
   <link rel="stylesheet" href="css/style.css">
+   <script src="js/auth.js" defer></script>
 </head>
 <body>
+   <script>if(window.simpleAuth) window.simpleAuth.requireAuth();</script>
+  <a href="dailyHome.html" class="global-back">← 日報エントリー</a>
   <div class="wrap">
     <h1>日報作成</h1>
   <p class="hint">必須項目は従業員ID・作業分類・事象分類・日付。写真は任意。</p>

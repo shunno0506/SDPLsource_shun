@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>日報メニュー</title>
   <link rel="stylesheet" href="css/style.css">
+   <script src="js/auth.js" defer></script>
 </head>
 <body>
+   <script>if(window.simpleAuth) window.simpleAuth.requireAuth();</script>
+  <a href="home.html" class="global-back">← ホーム</a>
   <div class="wrap">
     <header>
       <h1>日報メニュー</h1>
@@ -27,7 +30,7 @@
       </section>
     </main>
 
-    <a class="back" href="home.html">← ホームに戻る</a>
+  <!-- global back button at top-left handles navigation -->
   </div>
 
   <script>

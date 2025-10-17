@@ -88,3 +88,27 @@ input[type=number]{ width:100%; padding:10px; border-radius:8px; border:1px soli
   .grid{ grid-template-columns:1fr }
   .row{ flex-direction:column }
 }
+
+/* 固定ホームボタン（全ページ左上） */
+.global-back{
+  position:fixed;
+  left:16px;
+  top:16px;
+  z-index:1200;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  border-radius:10px;
+  background:var(--card);
+  color:var(--accent);
+  text-decoration:none;
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
+  border:1px solid rgba(0,0,0,0.06);
+  font-weight:700;
+}
+.global-back:hover{ transform:translateY(-1px); }
+
+@media(max-width:480px){
+  .global-back{ left:10px; top:10px; padding:6px 10px; }
+}

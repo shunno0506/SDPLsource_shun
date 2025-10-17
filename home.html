@@ -5,12 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>日報エントリープロトタイプ_ver1.0</title>
   <link rel="stylesheet" href="css/style.css">
+  <script src="js/auth.js" defer></script>
 </head>
 <body>
   <div class="container">
     <header>
       <h1>日報エントリー — プロトタイプ</h1>
-      <div class="lead">現場スタッフがその場で記録できる日報登録と、店舗改善を支援する分析・評価へ進むためのホーム画面</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="lead">現場スタッフがその場で記録できる日報登録と、店舗改善を支援する分析・評価へ進むためのホーム画面</div>
+        <div><button id="logoutBtn" class="btn secondary" style="font-weight:600">ログアウト</button></div>
+      </div>
     </header>
 
     <section class="cards" aria-label="主要な操作">
@@ -23,12 +27,14 @@
       <article class="card" aria-labelledby="analysis-title">
         <h2 id="analysis-title">分析・評価</h2>
         <p>店舗ごとの集計や時系列分析で改善点（課題）とGood Point（GP）を可視化し、PDCA を回すための評価画面に移動します。AI 提案のプレースホルダも用意。</p>
-        <a href="#" class="btn secondary big" id="analysis-btn" role="button" aria-pressed="false">分析・評価を見る</a>
+  <a href="reputation.html" class="btn big" id="analysis-btn" role="button" aria-pressed="false">分析・評価を見る</a>
       </article>
     </section>
   </div>
 
   <script>
+    // require auth for home
+    if(window.simpleAuth) window.simpleAuth.requireAuth();
     // 簡易プロトタイプ動作: ボタン押下でモーダル風の簡易説明を表示
     function showMessage(title, text){
       var el=document.createElement('div');
@@ -38,12 +44,16 @@
       el.appendChild(box);document.body.appendChild(el);
       document.getElementById('closeBtn').addEventListener('click',function(){document.body.removeChild(el)});
     }
-    document.getElementById('entry-btn').addEventListener('click',function(e){
+  document.getElementById('entry-btn').addEventListener('click',function(e){
       // 実運用／プロトタイプではボタン押下で dailyHome.html に遷移する
       // anchor に href が設定されているため、明示的に遷移させる
       window.location.href = 'dailyHome.html';
     });
-    document.getElementById('analysis-btn').addEventListener('click',function(e){e.preventDefault();showMessage('分析・評価のプロトタイプ','ここから分析ダッシュボードへ遷移します（デモ）。\n例: 週間集計、クレーム種別別の発生数、改善提案のサマリを表示。');});
+    document.getElementById('analysis-btn').addEventListener('click',function(e){ /* navigation by href */ });
+
+    // logout
+    const lb = document.getElementById('logoutBtn');
+    if(lb){ lb.addEventListener('click', function(){ window.simpleAuth.logout(); }); }
   </script>
 </body>
 </html>
