@@ -6,6 +6,7 @@
 	<title>売上登録</title>
 	<link rel="stylesheet" href="css/style.css">
 	<script src="js/auth.js" defer></script>
+	<script src="js/storage.js" defer></script>
 </head>
 <body>
 	<script>if(window.simpleAuth) window.simpleAuth.requireAuth();</script>
@@ -60,9 +61,23 @@
 				return;
 			}
 
-			// 通常はここでサーバーにPOSTする。今回は画面内で確認表示のみ行う。
-			msg.className = 'msg success';
-			msg.textContent = `登録しました： 売上 ¥${amount.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}、客数 ${customers} 人`;
+			// 保存（プロトタイプ: localStorage）
+			try{
+				if(window.appStorage){
+					const today = new Date();
+					const y = today.getFullYear();
+					const m = String(today.getMonth()+1).padStart(2,'0');
+					const d = String(today.getDate()).padStart(2,'0');
+					const dateStr = `${y}-${m}-${d}`;
+					window.appStorage.addSales({ date: dateStr, amount, customers });
+				}
+				msg.className = 'msg success';
+				msg.textContent = `登録しました： 売上 ¥${amount.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}、客数 ${customers} 人`;
+			}catch(err){
+				msg.className = 'msg error';
+				msg.textContent = '保存に失敗しました。ブラウザの保存領域を確認してください。';
+				return;
+			}
 
 			// フォームをリセットして再入力可能にする
 			form.reset();

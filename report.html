@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>日報詳細</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/auth.js" defer></script>
+  <script src="js/storage.js" defer></script>
+  <style>
+    .meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .label{color:#666}
+  </style>
+</head>
+<body>
+  <script>if(window.simpleAuth) window.simpleAuth.requireAuth();</script>
+  <a href="calendar.html" class="global-back">← カレンダー</a>
+  <div class="container">
+    <header>
+      <h1>日報詳細</h1>
+    </header>
+
+    <main class="card" style="padding:14px">
+      <div id="content">読み込み中...</div>
+    </main>
+  </div>
+
+  <script>
+    function qs(name){ const p = new URLSearchParams(location.search); return p.get(name); }
+    function el(tag, attrs={}, html=''){ const e=document.createElement(tag); Object.assign(e, attrs); if(html!==undefined) e.innerHTML=html; return e; }
+
+    function render(r){
+      const wrap = document.getElementById('content');
+      if(!r){ wrap.textContent = 'データが見つかりません。'; return; }
+      const imgHtml = (r.photos && r.photos[0]) ? `<div style="margin-top:8px"><img src="${r.photos[0].dataUrl}" alt="photo" style="max-width:100%;border-radius:8px"></div>` : '';
+      wrap.innerHTML = `
+        <div class="meta">
+          <div><div class="label">従業員ID</div><div>${r.employeeId||''}</div></div>
+          <div><div class="label">日付</div><div>${r.date||''}</div></div>
+          <div><div class="label">作業分類</div><div>${r.role||''}</div></div>
+          <div><div class="label">事象分類</div><div>${r.eventType||''}</div></div>
+        </div>
+        <div style="margin-top:8px"><div class="label">メモ</div><div>${(r.notes||'').replace(/\n/g,'<br>')}</div></div>
+        ${imgHtml}
+        <hr style="margin:12px 0">
+        <div>
+          <h3>AI要約/改善案（デモ）</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <div class="label">要約</div>
+              <textarea id="sumTxt" rows="7" style="width:100%">${r.summary||''}</textarea>
+            </div>
+            <div>
+              <div class="label">改善案</div>
+              <textarea id="sugTxt" rows="7" style="width:100%">${r.suggestions||''}</textarea>
+            </div>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button id="genBtn" class="btn">要約を生成（モック）</button>
+            <button id="saveBtn" class="btn secondary">要約を保存</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('genBtn').addEventListener('click', ()=>{
+        const g = generateMockSummary(r);
+        document.getElementById('sumTxt').value = g.summary;
+        document.getElementById('sugTxt').value = g.suggestions;
+      });
+      document.getElementById('saveBtn').addEventListener('click', ()=>{
+        const summary = document.getElementById('sumTxt').value;
+        const suggestions = document.getElementById('sugTxt').value;
+        if(window.appStorage){
+          const updated = Object.assign({}, r, { summary, suggestions });
+          window.appStorage.updateReport(updated);
+          alert('要約/改善案を保存しました');
+        }
+      });
+    }
+
+    function generateMockSummary(r){
+      const base = (r.notes||'').trim();
+      const head = base ? base.slice(0, 80) : `${r.eventType||'事象'}の簡易要約`;
+      const summary = `概要: ${head}${base.length>80?'...':''}`;
+      const suggestions = `改善案: 1) 根本原因の確認 2) 標準手順の策定 3) 周知・振り返り`;
+      return { summary, suggestions };
+    }
+
+    window.addEventListener('DOMContentLoaded', ()=>{
+      const id = qs('id');
+      const arr = window.appStorage ? window.appStorage.getReports() : [];
+      const rec = arr.find(x=>x.id===id);
+      render(rec);
+    });
+  </script>
+</body>
+</html>

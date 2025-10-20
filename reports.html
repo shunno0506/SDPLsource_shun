@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>日報検索・編集</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/auth.js" defer></script>
+  <script src="js/storage.js" defer></script>
+  <style>
+    .filters{ display:grid; grid-template-columns: repeat(6, 1fr); gap:10px }
+    .filters .col{ gap:4px }
+    .results .item{ display:grid; grid-template-columns: 1fr auto auto auto; gap:8px; align-items:center; padding:10px 0; border-bottom:1px solid #eee }
+    .results .item:last-child{ border-bottom:none }
+    @media(max-width:900px){ .filters{ grid-template-columns: 1fr 1fr } }
+  </style>
+</head>
+<body>
+  <script>if(window.simpleAuth) window.simpleAuth.requireAuth();</script>
+  <a href="dailyHome.html" class="global-back">← 日報メニュー</a>
+  <div class="wrap">
+    <h1>日報検索・編集</h1>
+    <p class="desc">期間や条件で絞り込み、一覧から詳細・編集・削除ができます。</p>
+
+    <section class="panel" style="margin-bottom:14px">
+      <div class="filters">
+        <div class="col">
+          <label>期間プリセット</label>
+          <select id="preset">
+            <option value="today">今日</option>
+            <option value="7d">直近7日</option>
+            <option value="30d" selected>直近30日</option>
+            <option value="month">今月</option>
+            <option value="all">全期間</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>開始日</label>
+          <input type="date" id="from">
+        </div>
+        <div class="col">
+          <label>終了日</label>
+          <input type="date" id="to">
+        </div>
+        <div class="col">
+          <label>従業員ID</label>
+          <input type="text" id="emp" placeholder="例: EMP-001">
+        </div>
+        <div class="col">
+          <label>作業分類</label>
+          <select id="role">
+            <option value="">すべて</option>
+            <option>厨房</option>
+            <option>ホール</option>
+            <option>レジ</option>
+            <option>店外</option>
+            <option>設備</option>
+            <option>その他</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>事象分類</label>
+          <select id="eventType">
+            <option value="">すべて</option>
+            <option>事故</option>
+            <option>故障</option>
+            <option>クレーム</option>
+            <option>賛辞</option>
+            <option>その他</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="col">
+          <label>キーワード</label>
+          <input type="text" id="kw" placeholder="メモテキストを検索">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="searchBtn">検索</button>
+        <button class="btn secondary" id="clearBtn">クリア</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h2 style="margin:0">検索結果</h2>
+        <div class="muted" id="count">0件</div>
+      </div>
+      <div class="results" id="results"></div>
+    </section>
+  </div>
+
+  <script>
+    function todayStr(){ const d = new Date(); const y=d.getFullYear(); const m=('0'+(d.getMonth()+1)).slice(-2); const day=('0'+d.getDate()).slice(-2); return `${y}-${m}-${day}`; }
+    function monthStartStr(){ const d=new Date(); d.setDate(1); const y=d.getFullYear(); const m=('0'+(d.getMonth()+1)).slice(-2); const day=('0'+d.getDate()).slice(-2); return `${y}-${m}-${day}`; }
+    function shiftDays(days){ const d=new Date(); d.setDate(d.getDate()+days); const y=d.getFullYear(); const m=('0'+(d.getMonth()+1)).slice(-2); const day=('0'+d.getDate()).slice(-2); return `${y}-${m}-${day}`; }
+
+    function applyPreset(){
+      const p = document.getElementById('preset').value;
+      const from = document.getElementById('from');
+      const to = document.getElementById('to');
+      if(p==='today'){ from.value = todayStr(); to.value = todayStr(); }
+      else if(p==='7d'){ from.value = shiftDays(-6); to.value = todayStr(); }
+      else if(p==='30d'){ from.value = shiftDays(-29); to.value = todayStr(); }
+      else if(p==='month'){ from.value = monthStartStr(); to.value = todayStr(); }
+      else { from.value = ''; to.value = ''; }
+    }
+
+    function inRange(date, from, to){
+      if(from && date < from) return false;
+      if(to && date > to) return false;
+      return true;
+    }
+
+    function search(){
+      const all = (window.appStorage && window.appStorage.getReports) ? window.appStorage.getReports() : [];
+      const from = document.getElementById('from').value || '';
+      const to = document.getElementById('to').value || '';
+      const emp = document.getElementById('emp').value.trim().toLowerCase();
+      const role = document.getElementById('role').value;
+      const eventType = document.getElementById('eventType').value;
+      const kw = document.getElementById('kw').value.trim().toLowerCase();
+
+      const filtered = all.filter(r=>{
+        if(!inRange(r.date||'', from, to)) return false;
+        if(emp && !(r.employeeId||'').toLowerCase().includes(emp)) return false;
+        if(role && (r.role!==role)) return false;
+        if(eventType && (r.eventType!==eventType)) return false;
+        if(kw){
+          const hay = `${r.notes||''} ${r.summary||''} ${r.suggestions||''}`.toLowerCase();
+          if(!hay.includes(kw)) return false;
+        }
+        return true;
+      }).sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (a.employeeId||'').localeCompare(b.employeeId||''));
+
+      renderResults(filtered);
+    }
+
+    function renderResults(list){
+      const box = document.getElementById('results');
+      const count = document.getElementById('count');
+      count.textContent = `${list.length}件`;
+      if(list.length===0){ box.innerHTML = '<div class="empty">該当する日報はありません</div>'; return; }
+      const frag = document.createDocumentFragment();
+      list.forEach(r=>{
+        const row = document.createElement('div');
+        row.className = 'item';
+        const left = document.createElement('div');
+        const thumb = (r.photos && r.photos[0]) ? `<img src="${r.photos[0].dataUrl}" alt="ph" style="width:48px;height:32px;object-fit:cover;border-radius:6px;border:1px solid #e6eef8;margin-right:8px">` : '';
+        left.innerHTML = `${thumb}<strong>${r.date||''}</strong> / ${r.employeeId||''} / ${r.role||''} / ${r.eventType||''}`;
+        left.style.display = 'flex'; left.style.alignItems = 'center';
+        const detail = document.createElement('a'); detail.className='btn secondary'; detail.textContent='詳細'; detail.href=`report.html?id=${encodeURIComponent(r.id)}`; detail.target='_blank';
+        const edit = document.createElement('a'); edit.className='btn secondary'; edit.textContent='編集'; edit.href=`editReport.html?id=${encodeURIComponent(r.id)}`;
+        const del = document.createElement('button'); del.className='btn danger'; del.textContent='削除';
+        del.addEventListener('click', ()=>{
+          if(confirm('この日報を削除しますか？')){
+            if(window.appStorage.deleteReport(r.id)) search(); else alert('削除に失敗しました');
+          }
+        });
+        row.appendChild(left); row.appendChild(detail); row.appendChild(edit); row.appendChild(del);
+        frag.appendChild(row);
+      });
+      box.innerHTML = '';
+      box.appendChild(frag);
+    }
+
+    function clearFilters(){
+      document.getElementById('preset').value = '30d';
+      document.getElementById('emp').value = '';
+      document.getElementById('role').value = '';
+      document.getElementById('eventType').value = '';
+      document.getElementById('kw').value = '';
+      applyPreset();
+    }
+
+    window.addEventListener('DOMContentLoaded', ()=>{
+      document.getElementById('preset').addEventListener('change', ()=>{ applyPreset(); search(); });
+      document.getElementById('searchBtn').addEventListener('click', search);
+      document.getElementById('clearBtn').addEventListener('click', ()=>{ clearFilters(); search(); });
+      applyPreset();
+      search();
+      window.addEventListener('storage', search);
+      window.addEventListener('focus', search);
+      
+      // URLクエリでプリセット/期間を受け付け（例: ?preset=all）
+      const p = new URLSearchParams(location.search);
+      const pre = p.get('preset');
+      if(pre){ const sel = document.getElementById('preset'); sel.value = pre; applyPreset(); search(); }
+    });
+  </script>
+</body>
+</html>

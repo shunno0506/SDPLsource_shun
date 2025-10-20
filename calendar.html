@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>カレンダー</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/auth.js" defer></script>
+  <script src="js/storage.js" defer></script>
+  <style>
+    .cal-wrap{display:grid;grid-template-columns:1fr 360px;gap:16px}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+    .cal-cell{background:#fff;border-radius:8px;min-height:72px;padding:6px;position:relative;cursor:pointer;border:1px solid #e7eaf0}
+    .cal-cell .d{position:absolute;top:6px;right:8px;color:#666;font-size:0.9rem}
+    .badge{display:inline-block;background:#0078d4;color:#fff;border-radius:999px;padding:2px 8px;font-size:12px;margin-top:28px}
+    .side{background:#fff;border-radius:12px;padding:12px}
+    .side h3{margin-top:0}
+    .list{max-height:60vh;overflow:auto}
+    .muted{color:#8a8f9c}
+  </style>
+</head>
+<body>
+  <script>if(window.simpleAuth) window.simpleAuth.requireAuth();</script>
+  <div class="container">
+    <header>
+      <h1>カレンダー</h1>
+      <div class="lead">日付を選ぶと、その日の「日報」「売上」の履歴を表示します。</div>
+    </header>
+
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <button id="prev" class="btn secondary">◀</button>
+      <div id="ym" style="font-weight:700"></div>
+      <button id="next" class="btn secondary">▶</button>
+      <button id="today" class="btn">今日</button>
+    </div>
+
+    <div class="cal-wrap">
+      <section class="card" style="padding:12px">
+        <div class="cal-grid" id="grid"></div>
+      </section>
+      <aside class="side card">
+        <h3 id="sideTitle">選択なし</h3>
+        <div class="list" id="sideList"></div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const ymEl = document.getElementById('ym');
+    const grid = document.getElementById('grid');
+    const sideTitle = document.getElementById('sideTitle');
+    const sideList = document.getElementById('sideList');
+
+    let cur = new Date();
+    cur.setDate(1);
+    let lastSelectedDate = null;
+
+    function fmtYM(d){ return `${d.getFullYear()}年 ${d.getMonth()+1}月`; }
+    function fmtDateStr(d){
+      const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function build(){
+      ymEl.textContent = fmtYM(cur);
+      grid.innerHTML = '';
+      const firstDow = new Date(cur.getFullYear(), cur.getMonth(), 1).getDay();
+      const lastDay = new Date(cur.getFullYear(), cur.getMonth()+1, 0).getDate();
+      const reports = (window.appStorage? window.appStorage.getReports():[]);
+      const sales = (window.appStorage? window.appStorage.getSales():[]);
+      const repByDate = reports.reduce((m,r)=>{(m[r.date]=m[r.date]||0);m[r.date]++;return m;},{});
+      const salByDate = sales.reduce((m,s)=>{(m[s.date]=m[s.date]||0);m[s.date]++;return m;},{});
+
+      // padding before first day
+      for(let i=0;i<firstDow;i++){
+        const cell = document.createElement('div');
+        cell.className='cal-cell muted';
+        grid.appendChild(cell);
+      }
+      // days
+      for(let d=1; d<=lastDay; d++){
+        const date = new Date(cur.getFullYear(), cur.getMonth(), d);
+        const ds = fmtDateStr(date);
+        const cell = document.createElement('div');
+        cell.className='cal-cell';
+        cell.innerHTML = `<div class="d">${d}</div>`;
+        const repN = repByDate[ds]||0;
+        const salN = salByDate[ds]||0;
+        if(repN>0){ const b=document.createElement('div'); b.className='badge'; b.textContent=`日報 ${repN}`; cell.appendChild(b); }
+        if(salN>0){ const b=document.createElement('div'); b.className='badge'; b.style.background='#5c2d91'; b.textContent=`売上 ${salN}`; cell.appendChild(b); }
+        cell.addEventListener('click', ()=> showDay(ds));
+        grid.appendChild(cell);
+      }
+    }
+
+    function showDay(ds){
+      lastSelectedDate = ds;
+      sideTitle.textContent = ds + ' の履歴';
+      sideList.innerHTML = '';
+      const reports = (window.appStorage? window.appStorage.getReports():[]).filter(r=>r.date===ds);
+      const sales = (window.appStorage? window.appStorage.getSales():[]).filter(s=>s.date===ds);
+
+      if(reports.length===0 && sales.length===0){
+        sideList.textContent = 'データがありません。';
+        return;
+      }
+      if(reports.length>0){
+        const h = document.createElement('h4'); h.textContent='日報'; sideList.appendChild(h);
+        reports.forEach(r=>{
+          const a = document.createElement('a');
+          a.style.display='block'; a.style.textDecoration='none'; a.style.color='inherit';
+          a.style.borderBottom='1px solid #eee'; a.style.padding='6px 0';
+          a.href = `report.html?id=${encodeURIComponent(r.id)}`;
+          a.target = '_blank';
+          a.innerHTML = `<div><strong>${r.employeeId||''}</strong> ${r.role||''} ${r.eventType||''}</div><div style=\"color:#666\">${(r.notes||'').slice(0,80)}</div>`;
+          sideList.appendChild(a);
+        })
+      }
+      if(sales.length>0){
+        const h = document.createElement('h4'); h.textContent='売上'; sideList.appendChild(h);
+        sales.forEach(s=>{
+          const div = document.createElement('div');
+          div.style.borderBottom='1px solid #eee'; div.style.padding='6px 0';
+          div.textContent = `売上 ¥${Number(s.amount||0).toLocaleString()} / 客数 ${Number(s.customers||0)}人`;
+          sideList.appendChild(div);
+        })
+      }
+    }
+
+    // 詳細描画・要約生成は別タブ report.html へ移動
+
+    document.getElementById('prev').addEventListener('click', ()=>{ cur.setMonth(cur.getMonth()-1); build(); if(lastSelectedDate) showDay(lastSelectedDate); });
+    document.getElementById('next').addEventListener('click', ()=>{ cur.setMonth(cur.getMonth()+1); build(); if(lastSelectedDate) showDay(lastSelectedDate); });
+    document.getElementById('today').addEventListener('click', ()=>{ const now = new Date(); cur = new Date(now.getFullYear(), now.getMonth(), 1); build(); showDay(fmtDateStr(now)); });
+
+    // Lazy initialize after DOM is ready and layout is settled
+    window.addEventListener('DOMContentLoaded', ()=>{ requestAnimationFrame(build); });
+    // Refresh when returning to the tab or when storage changes in another tab
+    window.addEventListener('focus', ()=>{ build(); if(lastSelectedDate) showDay(lastSelectedDate); });
+    window.addEventListener('storage', (e)=>{
+      if(!e || e.key==='reports' || e.key==='sales'){ build(); if(lastSelectedDate) showDay(lastSelectedDate); }
+    });
+  </script>
+</body>
+</html>

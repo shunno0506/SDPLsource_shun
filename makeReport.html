@@ -6,6 +6,7 @@
   <title>日報作成</title>
   <link rel="stylesheet" href="css/style.css">
    <script src="js/auth.js" defer></script>
+  <script src="js/storage.js" defer></script>
 </head>
 <body>
    <script>if(window.simpleAuth) window.simpleAuth.requireAuth();</script>
@@ -14,7 +15,7 @@
     <h1>日報作成</h1>
   <p class="hint">必須項目は従業員ID・作業分類・事象分類・日付。写真は任意。</p>
 
-    <form id="reportForm">
+  <form id="reportForm">
       <div class="row">
         <div class="col">
           <label for="employeeId" class="required">従業員ID</label>
@@ -60,6 +61,7 @@
         </div>
       </div>
 
+
       <div class="row">
         <div class="col full-width">
           <label for="notes">メモ（状況・対処・備考）</label>
@@ -77,6 +79,7 @@
 
       <div class="actions">
         <button type="button" class="btn" id="saveBtn">登録する</button>
+        <button type="button" class="btn secondary" id="downloadBtn">JSON をダウンロード</button>
         <button type="button" class="btn secondary" id="clearPhotoBtn">写真をクリア</button>
         <button type="reset" class="btn secondary">リセット</button>
         <a href="dailyHome.html" class="btn secondary" style="text-decoration:none">キャンセル</a>
@@ -151,7 +154,9 @@
       });
     }
 
-    // フォーム保存（簡易バリデーション＋JSON ダウンロード）
+    // スコア機能は一時的に無効化（UI/計算なし）
+
+    // フォーム保存（localStorage 保存、必要に応じて JSON ダウンロード）
     document.getElementById('saveBtn').addEventListener('click', function(){
       const form = document.getElementById('reportForm');
       // 従業員ID は必須チェック
@@ -172,25 +177,43 @@
         eventType: document.getElementById('eventType').value,
         customerCount: null,
         notes: document.getElementById('notes').value,
-        photos: []
+        photos: [],
+        summary: '', // AI 要約のプレースホルダ
+        suggestions: '' // AI 改善案のプレースホルダ
       };
 
       // 画像は base64 を付与（プロトタイプのみ、サイズ注意）
       const files = document.getElementById('photos').files;
       if(!files || files.length === 0){
-        downloadJSON(data);
+        persist(data);
         return;
       }
       // 1枚のみ処理する
       const file = files[0];
-      if(!file){ downloadJSON(data); return; }
+      if(!file){ persist(data); return; }
       const reader = new FileReader();
       reader.onload = e => {
         data.photos.push({name:file.name, dataUrl:e.target.result});
-        downloadJSON(data);
+        persist(data);
       };
       reader.readAsDataURL(file);
     });
+
+    function persist(obj){
+      try{
+        if(window.appStorage){ window.appStorage.addReport(obj); }
+        // 保存後にフォームをリセットし、次入力へ備える
+        const form = document.getElementById('reportForm');
+        if(form){
+          form.reset();
+          const empEl = document.getElementById('employeeId');
+          if(empEl) empEl.focus();
+        }
+        alert('日報を保存しました。フォームをリセットしました。');
+      }catch(e){
+        alert('保存に失敗しました。');
+      }
+    }
 
     function downloadJSON(obj){
       const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
@@ -203,8 +226,14 @@
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      alert('日報 JSON をダウンロードしました（プロトタイプ保存）。');
+      alert('JSON をダウンロードしました。');
     }
+
+    document.getElementById('downloadBtn').addEventListener('click', function(){
+      const data = window.appStorage ? (window.appStorage.getReports().slice(-1)[0] || null) : null;
+      if(data){ downloadJSON(data); }
+      else{ alert('先に「登録する」で保存してください。'); }
+    });
   </script>
 </body>
 </html>

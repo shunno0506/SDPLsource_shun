@@ -49,6 +49,7 @@ header h1, h1{ margin: 0 0 8px; font-size: 1.6rem; }
   text-decoration:none; font-weight:600; box-shadow:0 4px 10px rgba(0,0,0,0.08); border:none;
 }
 .secondary{ background:#444 }
+.danger{ background:#d9534f }
 .big{ font-size:1.05rem; padding:18px }
 .note{ font-size:0.9rem; color:#444; margin-top:18px; background:#fff; padding:12px; border-radius:8px }
 .footer{ margin-top:20px; font-size:0.9rem; color:var(--muted) }
